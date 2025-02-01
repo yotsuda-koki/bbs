@@ -22,7 +22,7 @@ BBS は、PHP を使用して開発されたシンプルな掲示板アプリケ
 
 - **バックエンド**: PHP, MySQL
 - **フロントエンド**: HTML, CSS, JavaScript
-- **サーバー**: Apache (XAMPP 推奨)
+- **サーバー**: Apache
 
 ---
 

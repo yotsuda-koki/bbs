@@ -30,18 +30,22 @@ BBS は、PHP を使用して開発されたシンプルな掲示板アプリケ
 
 ### ログインページ
 ユーザーがアカウント情報を入力してログインできるページ。
-![Login Page](doc/images/login_page.png)
+![Login Page](docs/images/login_page.png)
 
 ### 投稿一覧ページ
 掲示板の投稿が一覧表示されるページ。
-![Post List](doc/images/post_list.png)
+![Post List](docs/images/post_list.png)
 
 ### 投稿詳細ページ
 各投稿の詳細を確認できるページ。
-![Post Detail](doc/images/post_detail.png)
+![Post Detail](docs/images/post_detail.png)
 
-### コメント機能
-投稿に対してコメントを追加できる機能。
-![Comment Section](doc/images/comment_section.png)
+### 投稿ページ
+投稿を実行できるページ。
+![Post Detail](docs/images/post_action.png)
+
+### ユーザー編集機能
+ユーザー情報を編集・削除できる機能。
+![Comment Section](docs/images/user_edit.png)
 
 ---

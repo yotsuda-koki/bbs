@@ -24,6 +24,7 @@ try {
         $_SESSION['user'] = $user;
 
         unset($_SESSION['msg']['error']);
+        unset($_SESSION['msg']['login']);
 
         $_SESSION['msg']['success'] = 'ログインしました。';
 
@@ -31,6 +32,8 @@ try {
         exit();
     } else {
         $_SESSION['msg']['failure'] = 'ログインに失敗しました。';
+
+        unset($_SESSION['msg']['login']);
 
         header('Location: ' . TOP_URL);
         exit();

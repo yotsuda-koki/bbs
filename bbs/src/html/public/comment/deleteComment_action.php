@@ -26,7 +26,7 @@ try {
     //ポストを修正
     $base = Base::getInstance();
     $db = new Comments($base);
-    $db->deletePost($post['id']);
+    $db->deleteComment($post['id']);
     //エラーメッセージを削除
     unset($_SESSION['msg']['error']);
     //サクセスメッセージを保存してTOPページへ

@@ -25,7 +25,7 @@ if (!isset($post['token']) || !Common::isValidToken($post['token'])) {
 $data = array(
     'title' => $post['title'],
     'content' => $post['content'],
-    'id' => $post['id'],
+    'id' => $post['id']
 );
 
 try {

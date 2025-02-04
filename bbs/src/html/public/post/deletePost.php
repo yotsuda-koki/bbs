@@ -1,7 +1,7 @@
 <?php
-//コンフィグファイルの読み込み
+// コンフィグファイルの読み込み
 require_once('../../App/config.php');
-//クラスの読み込み
+// クラスの読み込み
 use App\Util\Common;
 use App\Model\Base;
 use App\Model\Posts;
@@ -13,16 +13,16 @@ if (empty($_SESSION['user'])) {
     // ログイン済み
     $user = $_SESSION['user'];
 }
-//サニタイズ
-$get = Common::sanitize($_GET);
+// サニタイズ
+$post = Common::sanitize($_POST);
 
 try {
-    //ポスト情報の取得
+    // ポスト情報の取得
     $base = Base::getInstance();
     $db = new Posts($base);
-    $p = $db->viewPostByID($get['id']);
-    //ポストの所有者がログインユーザーでない場合、エラーページへリダイレクト
-    if ($p['user_id'] !== $user['id']) {
+    $p = $db->getPostByID($post['id']);
+    // ログインユーザーがアドミンでないかつポストの所有者がログインユーザーでない場合、エラーページへリダイレクト
+    if ($user['is_admin'] == 0 && $p['user_id'] !== $user['id']) {
         header('Location: ' . ERROR_URL);
         exit();
     }
@@ -55,18 +55,19 @@ $token = Common::generateToken();
         <div class="row justify-content-center mt-5">
             <div class="col-md-8">
                 <?php if (isset($_SESSION['msg']['error'])) : ?>
-                    <div class="alert alert-danger" role="alert">
+                    <div class="alert alert-danger text-center" role="alert">
                         <?= $_SESSION['msg']['error'] ?>
                     </div>
                 <?php endif ?>
-                <div class="alert alert-primary" role="alert">
+                <?php unset($_SESSION['msg']) ?>
+                <div class="alert alert-primary text-center" role="alert">
                     こちらのポストを削除します。
                 </div>
                 <div class="card">
                     <div class="card-body">
-                        <form action="./editPost_action.php" method="post">
-                            <input type="hidden" name="id" value="<?= $p['id'] ?>">
+                        <form action="./deletePost_action.php" method="post">
                             <input type="hidden" name="token" value="<?= $token ?>">
+                            <input type="hidden" name="id" value="<?= $p['id'] ?>">
                             <div class="row mb-3">
                                 <div class="col-sm-4">
                                     <label for="title" class="form-label">タイトル</label>
@@ -84,8 +85,8 @@ $token = Common::generateToken();
                                 </div>
                             </div>
                             <div class="d-flex justify-content-end">
-                                <button type="submit" class="btn btn-danger me-2">削除</button>
-                                <a href="../top/index.php" class="btn btn-outline-primary">キャンセル</a>
+                                <input type="submit" class="btn btn-danger me-2" value="削除">
+                                <a href="../top/" class="btn btn-outline-primary">キャンセル</a>
                             </div>
                         </form>
                     </div>

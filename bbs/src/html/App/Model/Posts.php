@@ -20,13 +20,12 @@ class Posts
         $this->pdo = $pdo;
     }
     /**
-     * すべてのポストを閲覧する
+     * 1ページ文のポストを閲覧する
      *
      * @return array
      */
-    public function viewAllPosts()
+    public function getPostsByPage($startFrom, $postsPerPage)
     {
-
         $sql = '';
         $sql .= 'select ';
         $sql .= 'p.id, ';
@@ -38,11 +37,32 @@ class Posts
         $sql .= 'from posts p ';
         $sql .= 'inner join users u on p.user_id = u.id ';
         $sql .= 'where p.is_deleted = 0 ';
-        $sql .= 'order by update_at';
+        $sql .= 'order by update_at desc ';
+        $sql .= 'limit :startFrom, :postsPerPage';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(':startFrom', $startFrom, \PDO::PARAM_INT);
+        $stmt->bindParam(':postsPerPage', $postsPerPage, \PDO::PARAM_INT);
+        $stmt->execute();
+        $ret = $stmt->fetchAll();
+
+        return $ret;
+    }
+    /**
+     * トータルのページ数を取得
+     *
+     * @return int
+     */
+    public function getTotalPostsCount()
+    {
+        $sql = '';
+        $sql .= 'select count(*) ';
+        $sql .= 'from posts ';
+        $sql .= 'where is_deleted = 0';
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute();
-        $ret = $stmt->fetchAll();
+        $ret = $stmt->fetchColumn();
 
         return $ret;
     }
@@ -52,7 +72,7 @@ class Posts
      * @param int $id
      * @return array
      */
-    public function viewPostByID($id)
+    public function getPostByID($id)
     {
 
         $sql = '';
@@ -124,8 +144,8 @@ class Posts
 
         $sql = '';
         $sql .= 'update posts set ';
-        $sql .= 'title = :title,';
-        $sql .= 'content = :content,';
+        $sql .= 'title = :title, ';
+        $sql .= 'content = :content ';
         $sql .= 'where id = :id';
 
         $stmt = $this->pdo->prepare($sql);
@@ -155,7 +175,7 @@ class Posts
 
         $sql = '';
         $sql .= 'update posts set ';
-        $sql .= 'is_deleted = 1,';
+        $sql .= 'is_deleted = 1 ';
         $sql .= 'where id = :id';
 
         $stmt = $this->pdo->prepare($sql);

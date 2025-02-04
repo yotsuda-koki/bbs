@@ -1,7 +1,7 @@
 <?php
-//コンフィグファイルの読み込み
+// コンフィグファイルの読み込み
 require_once('../../App/config.php');
-//クラスの読み込み
+// クラスの読み込み
 use App\Util\Common;
 use App\Model\Base;
 use App\Model\Posts;
@@ -13,16 +13,16 @@ if (empty($_SESSION['user'])) {
     // ログイン済み
     $user = $_SESSION['user'];
 }
-//サニタイズ
-$get = Common::sanitize($_GET);
+// サニタイズ
+$post = Common::sanitize($_POST);
 
 try {
-    //ポスト情報の取得
+    // ポスト情報の取得
     $base = Base::getInstance();
     $db = new Posts($base);
-    $p = $db->viewPostByID($get['id']);
-    //ポストの所有者がログインユーザーでない場合、エラーページへリダイレクト
-    if ($p['user_id'] !== $user['id']) {
+    $p = $db->getPostByID($post['id']);
+    // ログインユーザーがアドミンでないかつポストの所有者がログインユーザーでない場合、エラーページへリダイレクト
+    if ($user['is_admin'] == 0 && $p['user_id'] !== $user['id']) {
         header('Location: ' . ERROR_URL);
         exit();
     }
@@ -55,11 +55,12 @@ $token = Common::generateToken();
         <div class="row justify-content-center mt-5">
             <div class="col-md-8">
                 <?php if (isset($_SESSION['msg']['error'])) : ?>
-                    <div class="alert alert-danger" role="alert">
+                    <div class="alert alert-danger text-center" role="alert">
                         <?= $_SESSION['msg']['error'] ?>
                     </div>
                 <?php endif ?>
-                <div class="alert alert-primary" role="alert">
+                <?php unset($_SESSION['msg']) ?>
+                <div class="alert alert-primary text-center" role="alert">
                     ポストを修正してください。
                 </div>
                 <div class="card">
@@ -84,7 +85,7 @@ $token = Common::generateToken();
                                 </div>
                             </div>
                             <div class="d-flex justify-content-end">
-                                <button type="submit" class="btn btn-success me-2">修正</button>
+                                <input type="submit" class="btn btn-success me-2" value="修正">
                                 <a href="../top/index.php" class="btn btn-outline-primary">キャンセル</a>
                             </div>
                         </form>

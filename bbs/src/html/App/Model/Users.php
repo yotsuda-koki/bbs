@@ -20,6 +20,67 @@ class Users
         $this->pdo = $pdo;
     }
     /**
+     * アドミンでないし削除されていないユーザーをすべて取得
+     *
+     * @return array
+     */
+    public function getUsersAll()
+    {
+
+        $sql = '';
+        $sql .= 'select ';
+        $sql .= 'id, ';
+        $sql .= 'account_id ';
+        $sql .= 'from ';
+        $sql .= 'users ';
+        $sql .= 'where ';
+        $sql .= 'is_admin = 0 ';
+        $sql .= 'and is_deleted = 0 ';
+        $sql .= 'order by id asc ';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+
+        $rec = $stmt->fetchAll();
+
+        return $rec;
+    }
+    /**
+     * アドミンでないし削除されていないユーザーをすべて取得
+     *
+     * @return array
+     */
+    public function getUserById($id)
+    {
+        if (!is_numeric($id)) {
+            return [];
+        }
+
+        if ($id <= 0) {
+            return [];
+        }
+
+        $sql = '';
+        $sql .= 'select ';
+        $sql .= 'id, ';
+        $sql .= 'account_id, ';
+        $sql .= 'name, ';
+        $sql .= 'email ';
+        $sql .= 'from ';
+        $sql .= 'users ';
+        $sql .= 'where ';
+        $sql .= 'id = :id';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(':id', $id, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        $rec = $stmt->fetch();
+
+        return $rec;
+    }
+
+    /**
      * メールアドレスとパスワードから検索してユーザー情報を取得する
      *
      * @param string $pass パスワード
@@ -81,18 +142,16 @@ class Users
         $pass = password_hash($data['pass'], PASSWORD_DEFAULT);
 
         $sql = '';
-        $sql .= 'insert into users (';
+        $sql .= 'insert into users ( ';
         $sql .= 'account_id, ';
         $sql .= 'name, ';
         $sql .= 'pass, ';
-        $sql .= 'email, ';
-        $sql .= 'is_admin';
-        $sql .= ') VALUES (';
-        $sql .= ':account_id,';
-        $sql .= ':name,';
-        $sql .= ':pass,';
-        $sql .= ':email,';
-        $sql .= ':is_admin';
+        $sql .= 'email ';
+        $sql .= ') values ( ';
+        $sql .= ':account_id, ';
+        $sql .= ':name, ';
+        $sql .= ':pass, ';
+        $sql .= ':email ';
         $sql .= ')';
 
         $stmt = $this->pdo->prepare($sql);
@@ -100,12 +159,16 @@ class Users
         $stmt->bindParam(':name', $data['name'], \PDO::PARAM_STR);
         $stmt->bindParam(':pass', $pass, \PDO::PARAM_STR);
         $stmt->bindParam(':email', $data['email'], \PDO::PARAM_STR);
-        $stmt->bindParam(':is_admin', $data['is_admin'], \PDO::PARAM_INT);
         $ret = $stmt->execute();
 
         return $ret;
     }
-
+    /**
+     * ユーザー情報を変更する
+     *
+     * @param array $data
+     * @return bool
+     */
     public function updateUser($data)
     {
 
@@ -113,16 +176,18 @@ class Users
             return false;
         }
 
-        $pass = password_hash($data['pass'], PASSWORD_BCRYPT);
+        $pass = password_hash($data['pass'], PASSWORD_DEFAULT);
 
         $sql = '';
         $sql .= 'update users set ';
+        $sql .= 'account_id = :account_id,';
         $sql .= 'name = :name,';
         $sql .= 'pass = :pass,';
         $sql .= 'email = :email ';
         $sql .= 'where id = :id';
 
         $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(':account_id', $data['account_id'], \PDO::PARAM_STR);
         $stmt->bindParam(':name', $data['name'], \PDO::PARAM_STR);
         $stmt->bindParam(':pass', $pass, \PDO::PARAM_STR);
         $stmt->bindParam(':email', $data['email'], \PDO::PARAM_STR);
@@ -130,5 +195,241 @@ class Users
         $ret = $stmt->execute();
 
         return $ret;
+    }
+    /**
+     * 指定IDのユーザーを削除する
+     *
+     * @param int $id
+     * @return bool
+     */
+    public function deleteUser($id)
+    {
+        if (!is_numeric($id)) {
+            return false;
+        }
+
+        if ($id <= 0) {
+            return false;
+        }
+
+        $sql = '';
+        $sql .= 'update users set ';
+        $sql .= 'is_deleted = 1 ';
+        $sql .= 'where id = :id';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(':id', $id, \PDO::PARAM_INT);
+        $ret = $stmt->execute();
+
+        return $ret;
+    }
+    /**
+     * アカウントIDのバリデーションチェック
+     *
+     * @param string $accountId
+     * @return bool
+     */
+    public function isValidEditAccountId($accountId, $id)
+    {
+
+        $sql = '';
+        $sql .= 'select ';
+        $sql .= 'count(*) ';
+        $sql .= 'from ';
+        $sql .= 'users ';
+        $sql .= 'where ';
+        $sql .= 'account_id = :account_id ';
+        $sql .= 'and ';
+        $sql .= 'id != :id';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(':account_id', $accountId, \PDO::PARAM_STR);
+        $stmt->bindParam(':id', $id, \PDO::PARAM_INT);
+        $stmt->execute();
+        $count = $stmt->fetchColumn();
+
+        if ($count > 0) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+    /**
+     * 名前のバリデーションチェック
+     *
+     * @param string $name
+     * @return bool
+     */
+    public function isValidEditName($name, $id)
+    {
+
+        $sql = '';
+        $sql .= 'select ';
+        $sql .= 'count(*) ';
+        $sql .= 'from ';
+        $sql .= 'users ';
+        $sql .= 'where ';
+        $sql .= 'name = :name ';
+        $sql .= 'and ';
+        $sql .= 'id != :id';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(':name', $name, \PDO::PARAM_STR);
+        $stmt->bindParam(':id', $id, \PDO::PARAM_INT);
+        $stmt->execute();
+        $count = $stmt->fetchColumn();
+
+        if ($count > 0) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+    /**
+     * メールアドレスのバリデーションチェック
+     *
+     * @param string $email
+     * @return bool
+     */
+    public function isValidEditEmail($email, $id)
+    {
+
+        $sql = '';
+        $sql .= 'select ';
+        $sql .= 'count(*) ';
+        $sql .= 'from ';
+        $sql .= 'users ';
+        $sql .= 'where ';
+        $sql .= 'email = :email ';
+        $sql .= 'and ';
+        $sql .= 'id != :id';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(':email', $email, \PDO::PARAM_STR);
+        $stmt->bindParam(':id', $id, \PDO::PARAM_INT);
+        $stmt->execute();
+        $count = $stmt->fetchColumn();
+
+        if ($count > 0) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+    /**
+     * アカウントIDのバリデーションチェック
+     *
+     * @param string $accountId
+     * @return bool
+     */
+    public function isValidAccountId($accountId)
+    {
+
+        $sql = '';
+        $sql .= 'select ';
+        $sql .= 'count(*) ';
+        $sql .= 'from ';
+        $sql .= 'users ';
+        $sql .= 'where ';
+        $sql .= 'account_id = :account_id';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(':account_id', $accountId, \PDO::PARAM_STR);
+        $stmt->execute();
+        $count = $stmt->fetchColumn();
+
+        if ($count > 0) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+    /**
+     * 名前のバリデーションチェック
+     *
+     * @param string $name
+     * @return bool
+     */
+    public function isValidName($name)
+    {
+
+        $sql = '';
+        $sql .= 'select ';
+        $sql .= 'count(*) ';
+        $sql .= 'from ';
+        $sql .= 'users ';
+        $sql .= 'where ';
+        $sql .= 'name = :name';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(':name', $name, \PDO::PARAM_STR);
+        $stmt->execute();
+        $count = $stmt->fetchColumn();
+
+        if ($count > 0) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+    /**
+     * メールアドレスのバリデーションチェック
+     *
+     * @param string $email
+     * @return bool
+     */
+    public function isValidEmail($email)
+    {
+
+        $sql = '';
+        $sql .= 'select ';
+        $sql .= 'count(*) ';
+        $sql .= 'from ';
+        $sql .= 'users ';
+        $sql .= 'where ';
+        $sql .= 'email = :email';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(':email', $email, \PDO::PARAM_STR);
+        $stmt->execute();
+        $count = $stmt->fetchColumn();
+
+        if ($count > 0) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+    /**
+     * アカウントIDを検索する
+     *
+     * @param string $accountId
+     * @return array
+     */
+    public function searchUser($accountId)
+    {
+
+        $sql = '';
+        $sql .= 'select ';
+        $sql .= 'id, ';
+        $sql .= 'account_id, ';
+        $sql .= 'name ';
+        $sql .= 'from ';
+        $sql .= 'users ';
+        $sql .= 'where ';
+        $sql .= 'is_admin = 0 ';
+        $sql .= 'and ';
+        $sql .= 'is_deleted = 0 ';
+        $sql .= 'and ';
+        $sql .= 'account_id ';
+        $sql .= 'like ';
+        $sql .= ':account_id';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':account_id', '%' . $accountId . '%', \PDO::PARAM_STR);
+        $stmt->execute();
+        $rec = $stmt->fetchAll();
+
+        return $rec;
     }
 }

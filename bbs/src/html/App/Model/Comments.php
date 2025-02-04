@@ -24,7 +24,7 @@ class Comments
      *
      * @return array
      */
-    public function viewCommentsByPostID($postId)
+    public function getCommentsByPostID($postId)
     {
 
         if (!is_numeric($postId)) {
@@ -37,6 +37,7 @@ class Comments
 
         $sql = '';
         $sql .= 'select ';
+        $sql .= 'c.id, ';
         $sql .= 'c.user_id, ';
         $sql .= 'u.name, ';
         $sql .= 'c.content, ';
@@ -46,7 +47,7 @@ class Comments
         $sql .= 'inner join users u on c.user_id = u.id ';
         $sql .= 'where post_id = :post_id ';
         $sql .= 'and c.is_deleted = 0 ';
-        $sql .= 'order by update_at';
+        $sql .= 'order by create_at';
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindParam(':post_id', $postId, \PDO::PARAM_INT);
@@ -74,6 +75,7 @@ class Comments
 
         $sql = '';
         $sql .= 'select ';
+        $sql .= 'c.id, ';
         $sql .= 'c.user_id, ';
         $sql .= 'u.name, ';
         $sql .= 'c.content, ';
@@ -81,14 +83,14 @@ class Comments
         $sql .= 'c.update_at ';
         $sql .= 'from comments c ';
         $sql .= 'inner join users u on c.user_id = u.id ';
-        $sql .= 'where id = :id ';
+        $sql .= 'where c.id = :id ';
         $sql .= 'and c.is_deleted = 0 ';
         $sql .= 'order by update_at';
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindParam(':id', $id, \PDO::PARAM_INT);
         $stmt->execute();
-        $ret = $stmt->fetchAll();
+        $ret = $stmt->fetch();
 
         return $ret;
     }
@@ -106,14 +108,14 @@ class Comments
         }
 
         $sql = '';
-        $sql .= 'insert into comments (';
-        $sql .= 'user_id,';
-        $sql .= 'post_id,';
-        $sql .= 'content';
-        $sql .= ') values (';
+        $sql .= 'insert into comments ( ';
+        $sql .= 'user_id, ';
+        $sql .= 'post_id, ';
+        $sql .= 'content ';
+        $sql .= ') values ( ';
         $sql .= ':user_id,';
-        $sql .= ':post_id,';
-        $sql .= ':content';
+        $sql .= ':post_id, ';
+        $sql .= ':content ';
         $sql .= ')';
 
         $stmt = $this->pdo->prepare($sql);
@@ -147,7 +149,7 @@ class Comments
 
         $sql = '';
         $sql .= 'update comments set ';
-        $sql .= 'content = :content,';
+        $sql .= 'content = :content ';
         $sql .= 'where id = :id';
 
         $stmt = $this->pdo->prepare($sql);
@@ -163,7 +165,7 @@ class Comments
      * @param int $id
      * @return bool
      */
-    public function deletePost($id)
+    public function deleteComment($id)
     {
 
         if (!is_numeric($id)) {
@@ -176,7 +178,7 @@ class Comments
 
         $sql = '';
         $sql .= 'update comments set ';
-        $sql .= 'is_deleted = 1,';
+        $sql .= 'is_deleted = 1 ';
         $sql .= 'where id = :id';
 
         $stmt = $this->pdo->prepare($sql);

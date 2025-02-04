@@ -7,31 +7,28 @@ use App\Model\Base;
 use App\Model\Posts;
 use App\Model\Comments;
 
-$get = Common::sanitize($_GET);
+$post = Common::sanitize($_POST);
 //セッションに保存されているエラーメッセージを削除
 unset($_SESSION['msg']['error']);
 
 if (empty($_SESSION['user'])) {
     // 未ログイン
+    $_SESSION['msg']['failure'] = 'ログインしてください。';
     header('Location: ' . TOP_URL);
+    exit();
 } else {
     // ログイン済み
     $user = $_SESSION['user'];
-}
-
-if (!isset($get['id'])) {
-    header('Location: ' . TOP_URL);
-    exit;
 }
 
 try {
     //ポスト情報の取得
     $base = Base::getInstance();
     $db = new Posts($base);
-    $p = $db->viewPostByID($get['id']);
+    $p = $db->getPostByID($post['id']);
     //コメント情報の取得
     $db = new Comments($base);
-    $comments = $db->viewCommentsByPostID($get['id']);
+    $comments = $db->getCommentsByPostID($post['id']);
 } catch (Exception $e) {
     //エラー時エラーページへ
     header('Location: ' . ERROR_URL);
@@ -69,25 +66,36 @@ $token = Common::generateToken();
     <div class="container">
         <div class="card mt-5 mb-2">
             <div class="card-body">
-                <div class="d-flex">
-                    <h5 class="card-title me-2"><?= $p['title'] ?></h5>
-                    <h5 class="card-title">By <?= $p['name'] ?></h5>
+                <div class="row">
+                    <div>
+                        <h5 class="card-title"><?= $p['name'] ?></h5>
+                    </div>
+                    <div>
+                        <h4 class="card-title me-2"><?= $p['title'] ?></h4>
+                    </div>
                 </div>
-                <h6 class="card-subtitle text-body-secondary">作成日時:<?= $p['create_at'] ?> 更新日時:<?= $p['update_at'] ?></h6>
+                <h6 class="card-subtitle text-body-secondary my-1">作成日時:<?= $p['create_at'] ?> 更新日時:<?= $p['update_at'] ?></h6>
                 <p class="card-text"><?= $p['content'] ?></p>
                 <div class="d-flex justify-content-end">
-                    <?php if ($user['id'] === $p['user_id']) : ?>
-                        <a href="./editPost.php?<?= $p['id'] ?>" class="btn btn-outline-success me-2">編集</a>
-                        <a href="./deletePost.php<?= $p['id'] ?>" class="btn btn-outline-danger me-2">削除</a>
+                    <?php if ($user['is_admin'] == 1 || $user['id'] === $p['user_id']) : ?>
+                        <form action="../post/editPost.php" method="post">
+                            <input type="hidden" name="token" value="<?= $token ?>">
+                            <input type="hidden" name="id" value="<?= $p['id'] ?>">
+                            <input type="submit" class="btn btn-outline-success me-1 mb-1" value="編集">
+                        </form>
+                        <form action="../post/deletePost.php" method="post">
+                            <input type="hidden" name="token" value="<?= $token ?>">
+                            <input type="hidden" name="id" value="<?= $p['id'] ?>">
+                            <input type="submit" class="btn btn-outline-danger me-1 mb-1" value="削除">
+                        </form>
                     <?php endif ?>
-                    <a href="../top/" class="btn btn-outline-primary">戻る</a>
-
+                    <a href="../top/" class="btn btn-outline-primary  me-1 mb-1">戻る</a>
                 </div>
             </div>
         </div>
         <div class="line"></div>
         <div class="half-width">
-            <form action="../comment/postComment_action.php">
+            <form action="../comment/postComment_action.php" method="post">
                 <input type="hidden" name="token" value="<?= $token ?>">
                 <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
                 <input type="hidden" name="post_id" value="<?= $p['id'] ?>">
@@ -96,7 +104,7 @@ $token = Common::generateToken();
                         <textarea class="form-control" name="content"></textarea>
                     </div>
                     <div class="col-md-3  d-flex align-items-end">
-                        <input type="submit" class="btn btn-primary" value="コメントする">
+                        <input type="submit" class="btn btn-outline-primary" value="コメントする">
                     </div>
                 </div>
             </form>
@@ -107,15 +115,23 @@ $token = Common::generateToken();
             <?php foreach ($comments as $c) : ?>
                 <div class="card mb-1">
                     <div class="card-header">
-                        <?= $c['name'] ?>
+                        名前:<?= $c['name'] ?>
                     </div>
                     <div class="card-body">
                         <?= $c['content'] ?>
                     </div>
-                    <?php if ($user['id'] === $c['user_id']) : ?>
+                    <?php if ($user['is_admin'] == 1 || $user['id'] === $c['user_id']) : ?>
                         <div class="d-flex justify-content-end">
-                            <a href="./editComment.php?id=<?= $c['id'] ?>" class="btn btn-outline-success me-1 mb-1">編集</a>
-                            <a href="./deleteComment.php?id=<?= $c['id'] ?>" class=" btn btn-outline-danger me-1 mb-1">削除</a>
+                            <form action="../comment/editComment.php" method="post">
+                                <input type="hidden" name="token" value="<?= $token ?>">
+                                <input type="hidden" name="id" value="<?= $c['id'] ?>">
+                                <input type="submit" class="btn btn-outline-success me-1 mb-1" value="編集">
+                            </form>
+                            <form action="../comment/deleteComment.php" method="post">
+                                <input type="hidden" name="token" value="<?= $token ?>">
+                                <input type="hidden" name="id" value="<?= $c['id'] ?>">
+                                <input type="submit" class="btn btn-outline-danger me-1 mb-1" value="削除">
+                            </form>
                         </div>
                     <?php endif ?>
                 </div>

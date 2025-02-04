@@ -1,20 +1,23 @@
 <?php
-//コンフィグファイルを読み込む
+// コンフィグファイルを読み込む
 require_once('../../App/config.php');
-//クラスを読み込む
+// クラスを読み込む
 use App\Util\Common;
 use App\Model\Base;
 use App\Model\Posts;
 
 $get = Common::sanitize($_GET);
-//セッションに保存されているエラーメッセージを削除
-unset($_SESSION['msg']['error']);
 
 if (!empty($_SESSION['user'])) {
-    //ログイン時
+    // ログイン時
     $user = $_SESSION['user'];
 }
-
+// 1ページあたりの投稿数
+$postsPerPage = 10;
+// 現在のページ番号を取得（デフォルトは1）
+$page = isset($get['page']) ? $get['page'] : 1;
+// 取得する投稿の開始位置を計算
+$startFrom = ($page - 1) * $postsPerPage;
 
 if (isset($get['cancell']) && $get['cancell'] == 1) {
     unset($_SESSION['msg']['success']);
@@ -22,9 +25,14 @@ if (isset($get['cancell']) && $get['cancell'] == 1) {
 }
 
 try {
+    // 指定された範囲のポストを取得
     $base = Base::getInstance();
     $db = new Posts($base);
-    $posts = $db->viewAllPosts();
+    $posts = $db->getPostsByPage($startFrom, $postsPerPage);
+    // 全体の投稿数を取得
+    $totalPosts = $db->getTotalPostsCount();
+    // ページ数を計算
+    $totalPages = ceil($totalPosts / $postsPerPage);
 } catch (Exception $e) {
     // $e->getMessage();
     // var_dump($e);
@@ -32,7 +40,7 @@ try {
     header('Location: ' . ERROR_URL);
     exit;
 }
-//ワンタイムトークンの作成
+// ワンタイムトークンの作成
 $token = Common::generateToken();
 ?>
 <!DOCTYPE html>
@@ -57,16 +65,15 @@ $token = Common::generateToken();
                 <div class="navbar-nav">
                     <a class="nav-link"><?= isset($user) ? $user['account_id'] : 'AccoutId' ?></a>
                     <a class="nav-link"><?= isset($user) ? $user['name'] : 'UserName' ?></a>
-                    <a class="nav-link" aria-current="page" href="../post/post.php">Post</a>
+                    <?php if (isset($user) && $user['is_admin'] == 1) : ?>
+                        <a class="nav-link link-primary" href="../user/searchUser.php">EditUser</a>
+                    <?php endif ?>
                 </div>
             </div>
-            <div class="row mx-1">
-                <form class="d-flex" role="search">
-                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-                    <button class="btn btn-outline-success" type="submit">Search</button>
-                </form>
-            </div>
             <?php if (isset($user)) : ?>
+                <div class="row mx-1">
+                    <a class="btn btn-outline-primary" aria-current="page" href="../post/post.php">POST</a>
+                </div>
                 <div class="row mx-1">
                     <a href="../login/logout.php" class="btn btn-outline-danger">Logout</a>
                 </div>
@@ -87,7 +94,7 @@ $token = Common::generateToken();
             <?php if (isset($_SESSION['msg']['success'])) : ?>
                 <div class="col-3"></div>
                 <div class="col-6">
-                    <div class="alert alert-primary" role="alert">
+                    <div class="alert alert-primary  text-center" role="alert">
                         <?= $_SESSION['msg']['success'] ?>
                     </div>
                 </div>
@@ -101,11 +108,12 @@ $token = Common::generateToken();
                 </div>
                 <div class="col-3"></div>
             <?php endif ?>
+            <?php unset($_SESSION['msg']) ?>
             <div class="d-flex justify-content-center">
                 <h2>掲示板一覧</h2>
             </div>
             <table class="table table-striped">
-                <thead>
+                <thead class="text-center align-middle">
                     <tr>
                         <th scope="col">ID</th>
                         <th scope="col">タイトル</th>
@@ -114,11 +122,17 @@ $token = Common::generateToken();
                         <th scope="col">更新日時</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="text-center align-middle">
                     <?php foreach ($posts as $post) : ?>
                         <tr>
                             <th scope="row"><?= $post['id'] ?></th>
-                            <td><a href="../post/viewPost.php?id=<?= $post['id'] ?>"><?= $post['title'] ?></a></td>
+                            <td>
+                                <form action="../post/viewPost.php" method="post">
+                                    <input type="hidden" name="token" value="<?= $token ?>">
+                                    <input type="hidden" name="id" value="<?= $post['id'] ?>">
+                                    <input type="submit" class="btn btn-link" value="<?= $post['title'] ?>">
+                                </form>
+                            </td>
                             <td><?= $post['name'] ?></td>
                             <td><?= $post['create_at'] ?></td>
                             <td><?= $post['update_at'] ?></td>
@@ -126,6 +140,17 @@ $token = Common::generateToken();
                     <?php endforeach ?>
                 </tbody>
             </table>
+            <div class="d-flex justify-content-center">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        <?php for ($i = 1; $i <= $totalPages; $i++) : ?>
+                            <li class="page-item <?= $activeClass = ($i == $page) ? 'active' : ''; ?>">
+                                <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                            </li>
+                        <?php endfor ?>
+                    </ul>
+                </nav>
+            </div>
         </div>
     </div>
     <!-- コンテナ -->

@@ -33,11 +33,9 @@ try {
     $base = Base::getInstance();
     $db = new Comments($base);
     $db->uploadComment($data);
-    //エラーメッセージを削除
-    unset($_SESSION['msg']['error']);
     //サクセスメッセージを保存してTOPページへ
     $_SESSION['msg']['success'] = 'コメントを投稿しました。';
-    header('Location: ../post/viewPost.php');
+    header('Location: ../top/');
     exit();
 } catch (Exception $e) {
     //エラー時エラーページへ

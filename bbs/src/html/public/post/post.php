@@ -9,6 +9,7 @@ unset($_SESSION['msg']['error']);
 if (empty($_SESSION['user'])) {
     // 未ログイン
     header('Location: ' . LOGIN_URL);
+    exit();
 } else {
     // ログイン済み
     $user = $_SESSION['user'];
@@ -38,11 +39,12 @@ $token = Common::generateToken();
         <div class="row justify-content-center mt-5">
             <div class="col-md-8">
                 <?php if (isset($_SESSION['msg']['error'])) : ?>
-                    <div class="alert alert-danger" role="alert">
+                    <div class="alert alert-danger text-center" role="alert">
                         <?= $_SESSION['msg']['error'] ?>
                     </div>
                 <?php endif ?>
-                <div class="alert alert-primary" role="alert">
+                <?php unset($_SESSION['msg']) ?>
+                <div class="alert alert-primary text-center" role="alert">
                     ポストを投稿してください。
                 </div>
                 <div class="card">

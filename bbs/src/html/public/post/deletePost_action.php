@@ -18,7 +18,7 @@ $post = Common::sanitize($_POST);
 //ワンタイムトークンのチェック
 if (!isset($post['token']) || !Common::isValidToken($post['token'])) {
     $_SESSION['msg']['error'] = '不正なアクセスです';
-    header('Location: ./post.php');
+    header('Location: ./top/');
     exit();
 }
 
@@ -26,7 +26,7 @@ try {
     //ポストを削除
     $base = Base::getInstance();
     $db = new Posts($base);
-    $db->deletePost($id);
+    $db->deletePost($post['id']);
     //エラーメッセージを削除
     unset($_SESSION['msg']['error']);
     //サクセスメッセージを保存してTOPページへ
